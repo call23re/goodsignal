@@ -6,7 +6,7 @@ This fork adds some small error handling features and aliases.
 ## Install with Wally
 ```toml
 [dependencies]
-Network = "call23re/goodsignal@0.1.0"
+Network = "call23re/goodsignal@0.1.1"
 ```
 
 # Full API
