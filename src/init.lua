@@ -12,7 +12,9 @@
 --   local sig = Signal.new()                                                 --
 --   local connection = sig:Connect(function(arg1, arg2, ...) ... end)        --
 --   sig:Fire(arg1, arg2, ...)                                                --
+--   sig:Throw(err) 														  --
 --   connection:Disconnect()                                                  --
+--   connection:Catch(cb) 												      --
 --   sig:DisconnectAll()                                                      --
 --   local arg1, arg2, ... = sig:Wait()                                       --
 --                                                                            --
@@ -21,7 +23,10 @@
 --                                                                            --
 -- Authors:                                                                   --
 --   stravant - July 31st, 2021 - Created the file.                           --
+--   call23re2 - May 20th, 2022 - Error handling and aliases.                 --
 --------------------------------------------------------------------------------
+
+local ERROR_NON_FUNCTION = "Please pass a handler function to %s"
 
 -- The currently idle thread to run the next handler on
 local freeRunnerThread = nil
@@ -83,6 +88,15 @@ function Connection:Disconnect()
 	end
 end
 
+Connection.disconnect = Connection.Disconnect
+
+function Connection:Catch(cb)
+	assert(typeof(cb) == "function", ERROR_NON_FUNCTION:format("Connection:Catch"))
+	self._errcallback = cb
+end
+
+Connection.catch = Connection.Catch
+
 -- Make Connection strict
 setmetatable(Connection, {
 	__index = function(tb, key)
@@ -104,6 +118,8 @@ function Signal.new()
 end
 
 function Signal:Connect(fn)
+	assert(typeof(fn) == "function", ERROR_NON_FUNCTION:format("Signal:Connect"))
+	
 	local connection = Connection.new(self, fn)
 	if self._handlerListHead then
 		connection._next = self._handlerListHead
@@ -114,11 +130,15 @@ function Signal:Connect(fn)
 	return connection
 end
 
+Signal.connect = Signal.Connect
+
 -- Disconnect all handlers. Since we use a linked list it suffices to clear the
 -- reference to the head handler.
 function Signal:DisconnectAll()
 	self._handlerListHead = false
 end
+
+Signal.disconnectAll = Signal.DisconnectAll
 
 -- Signal:Fire(...) implemented by running the handler functions on the
 -- coRunnerThread, and any time the resulting thread yielded without returning
@@ -137,6 +157,20 @@ function Signal:Fire(...)
 	end
 end
 
+Signal.fire = Signal.Fire
+
+function Signal:Throw(err)
+	local item = self._handlerListHead
+	while item do
+		if item._connected and item._errcallback then
+			task.spawn(item._errcallback, debug.traceback(nil, 2), err)
+		end
+		item = item._next
+	end
+end
+
+Signal.throw = Signal.Throw
+
 -- Implement Signal:Wait() in terms of a temporary connection using
 -- a Signal:Connect() which disconnects itself.
 function Signal:Wait()
@@ -148,6 +182,8 @@ function Signal:Wait()
 	end)
 	return coroutine.yield()
 end
+
+Signal.wait = Signal.Wait
 
 -- Make signal strict
 setmetatable(Signal, {
