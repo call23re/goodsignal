@@ -63,7 +63,7 @@ function Connection.new(signal, fn)
 end
 
 function Connection:Disconnect()
-	assert(self._connected, "Can't disconnect a connection twice.", 2)
+	assert(self._connected, "Can't disconnect a connection twice.")
 	self._connected = false
 
 	-- Unhook the node, but DON'T clear it. That way any fire calls that are
@@ -88,7 +88,7 @@ setmetatable(Connection, {
 	__index = function(tb, key)
 		error(("Attempt to get Connection::%s (not a valid member)"):format(tostring(key)), 2)
 	end,
-	__newindex = function(tb, key, value)
+	__newindex = function(tb, key)
 		error(("Attempt to set Connection::%s (not a valid member)"):format(tostring(key)), 2)
 	end
 })
@@ -99,7 +99,7 @@ Signal.__index = Signal
 
 function Signal.new()
 	return setmetatable({
-		_handlerListHead = false,	
+		_handlerListHead = false
 	}, Signal)
 end
 
@@ -154,7 +154,7 @@ setmetatable(Signal, {
 	__index = function(tb, key)
 		error(("Attempt to get Signal::%s (not a valid member)"):format(tostring(key)), 2)
 	end,
-	__newindex = function(tb, key, value)
+	__newindex = function(tb, key)
 		error(("Attempt to set Signal::%s (not a valid member)"):format(tostring(key)), 2)
 	end
 })
