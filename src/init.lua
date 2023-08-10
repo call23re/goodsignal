@@ -159,11 +159,11 @@ end
 
 Signal.fire = Signal.Fire
 
-function Signal:Throw(err)
+function Signal:Throw(err, ...)
 	local item = self._handlerListHead
 	while item do
 		if item._connected and item._errcallback then
-			task.spawn(item._errcallback, err, debug.traceback(nil, 2))
+			task.spawn(item._errcallback, err, debug.traceback(nil, 2), ...)
 		end
 		item = item._next
 	end
