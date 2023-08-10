@@ -185,6 +185,21 @@ end
 
 Signal.wait = Signal.Wait
 
+-- Implement Signal:Once() in terms of a connection which disconnects
+-- itself before running the handler.
+function Signal:Once(fn)
+	local cn;
+	cn = self:Connect(function(...)
+		if cn._connected then
+			cn:Disconnect()
+		end
+		fn(...)
+	end)
+	return cn
+end
+
+Signal.once = Signal.Once
+
 -- Make signal strict
 setmetatable(Signal, {
 	__index = function(tb, key)
